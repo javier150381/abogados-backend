@@ -1,9 +1,9 @@
-﻿from fastapi import APIRouter, Depends
+﻿from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from app.db.session import SessionLocal
 from app.models.lawyer import Lawyer
-from app.schemas.lawyer import LawyerCreate, LawyerOut
+from app.schemas.lawyer import LawyerCreate, LawyerOut, LawyerUpdate
 
 router = APIRouter()
 
@@ -59,3 +59,18 @@ def list_lawyers(
         like = f"%{q}%"
         query = query.filter((Lawyer.full_name.ilike(like)) | (Lawyer.firm.ilike(like)) | (Lawyer.bio.ilike(like)))
     return query.offset(offset).limit(limit).all()
+
+@router.put("/lawyers/{lawyer_id}", response_model=LawyerOut)
+def update_lawyer(lawyer_id: int, payload: LawyerUpdate, db: Session = Depends(get_db)):
+    obj = db.query(Lawyer).get(lawyer_id)
+    if not obj:
+        raise HTTPException(status_code=404, detail="Lawyer not found")
+    data = payload.dict(exclude_unset=True)
+    if "specialties" in data and data["specialties"] is not None:
+        data["specialties"] = ",".join(data["specialties"])
+    if "languages" in data and data["languages"] is not None:
+        data["languages"] = ",".join(data["languages"])
+    for campo, valor in data.items():
+        setattr(obj, campo, valor)
+    db.commit(); db.refresh(obj)
+    return obj
