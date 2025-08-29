@@ -73,3 +73,11 @@ class LawyerOut(LawyerBase):
     class Config:
         from_attributes = True
 
+
+
+class LawyerList(BaseModel):
+    items: List[LawyerOut]
+    total: int
+    limit: int
+    offset: int
+
