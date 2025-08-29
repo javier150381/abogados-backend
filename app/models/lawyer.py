@@ -1,5 +1,13 @@
-﻿from sqlalchemy import Column, Integer, String, Text, Float
+from sqlalchemy import Column, Integer, String, Text, Float, Enum
+from enum import Enum as PyEnum
 from app.db.session import Base
+
+
+class VerificationStatus(str, PyEnum):
+    pending = "pending"
+    verified = "verified"
+    rejected = "rejected"
+
 
 class Lawyer(Base):
     __tablename__ = "lawyers"
@@ -18,3 +26,5 @@ class Lawyer(Base):
     bio = Column(Text)
     photo_url = Column(String(300))
     rating = Column(Float)
+    verification_status = Column(Enum(VerificationStatus), default=VerificationStatus.pending, nullable=False)
+

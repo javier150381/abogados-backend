@@ -1,5 +1,7 @@
-﻿from typing import List, Optional
+from typing import List, Optional
 from pydantic import BaseModel, EmailStr
+from app.models.lawyer import VerificationStatus
+
 
 class LawyerBase(BaseModel):
     full_name: str
@@ -16,9 +18,12 @@ class LawyerBase(BaseModel):
     bio: Optional[str] = None
     photo_url: Optional[str] = None
     rating: Optional[float] = None
+    verification_status: VerificationStatus = VerificationStatus.pending
+
 
 class LawyerCreate(LawyerBase):
     pass
+
 
 class LawyerUpdate(BaseModel):
     full_name: Optional[str] = None
@@ -35,8 +40,16 @@ class LawyerUpdate(BaseModel):
     bio: Optional[str] = None
     photo_url: Optional[str] = None
     rating: Optional[float] = None
+    verification_status: Optional[VerificationStatus] = None
+
+
+class LawyerVerify(BaseModel):
+    verification_status: VerificationStatus
+
 
 class LawyerOut(LawyerBase):
     id: int
+
     class Config:
         from_attributes = True
+

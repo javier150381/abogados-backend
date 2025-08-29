@@ -1,11 +1,14 @@
-﻿from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Header, status
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from app.db.session import SessionLocal
+from app.core.config import JWT_SECRET
 from app.models.lawyer import Lawyer
-from app.schemas.lawyer import LawyerCreate, LawyerOut, LawyerUpdate
+from app.schemas.lawyer import LawyerCreate, LawyerOut, LawyerUpdate, LawyerVerify
+
 
 router = APIRouter()
+
 
 def get_db():
     db = SessionLocal()
@@ -14,9 +17,16 @@ def get_db():
     finally:
         db.close()
 
+
+def require_admin(authorization: str = Header(None)):
+    if authorization != f"Bearer {JWT_SECRET}":
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
+
+
 @router.get("/health")
 def health():
     return {"status": "ok"}
+
 
 @router.post("/lawyers", response_model=LawyerOut)
 def create_lawyer(payload: LawyerCreate, db: Session = Depends(get_db)):
@@ -35,9 +45,11 @@ def create_lawyer(payload: LawyerCreate, db: Session = Depends(get_db)):
         bio=payload.bio,
         photo_url=payload.photo_url,
         rating=payload.rating,
+        verification_status=payload.verification_status,
     )
     db.add(item); db.commit(); db.refresh(item)
     return item
+
 
 @router.get("/lawyers", response_model=List[LawyerOut])
 def list_lawyers(
@@ -75,6 +87,16 @@ def update_lawyer(lawyer_id: int, payload: LawyerUpdate, db: Session = Depends(g
         data["languages"] = ",".join(data["languages"])
     for campo, valor in data.items():
         setattr(obj, campo, valor)
+    db.commit(); db.refresh(obj)
+    return obj
+
+
+@router.put("/admin/lawyers/{lawyer_id}/verify", response_model=LawyerOut)
+def verify_lawyer(lawyer_id: int, payload: LawyerVerify, db: Session = Depends(get_db), _: None = Depends(require_admin)):
+    obj = db.query(Lawyer).get(lawyer_id)
+    if not obj:
+        raise HTTPException(status_code=404, detail="Lawyer not found")
+    obj.verification_status = payload.verification_status
     db.commit(); db.refresh(obj)
     return obj
 
