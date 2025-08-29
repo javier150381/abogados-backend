@@ -103,6 +103,13 @@ def list_lawyers(
     items = query.offset(offset).limit(limit).all()
     return {"items": items, "total": total, "limit": limit, "offset": offset}
 
+@router.get("/lawyers/{lawyer_id}", response_model=LawyerOut)
+def get_lawyer(lawyer_id: int, db: Session = Depends(get_db)):
+    obj = db.query(Lawyer).get(lawyer_id)
+    if not obj:
+        raise HTTPException(status_code=404, detail="Lawyer not found")
+    return obj
+
 @router.put("/lawyers/{lawyer_id}", response_model=LawyerOut)
 def update_lawyer(
     lawyer_id: int,
