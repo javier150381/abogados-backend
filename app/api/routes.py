@@ -1,4 +1,4 @@
-﻿from fastapi import APIRouter, Depends
+﻿from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from app.db.session import SessionLocal
@@ -59,3 +59,9 @@ def list_lawyers(
         like = f"%{q}%"
         query = query.filter((Lawyer.full_name.ilike(like)) | (Lawyer.firm.ilike(like)) | (Lawyer.bio.ilike(like)))
     return query.offset(offset).limit(limit).all()
+
+@router.get("/lawyers/{lawyer_id}", response_model=LawyerOut)
+def get_lawyer(lawyer_id: int, db: Session = Depends(get_db)):
+    item = db.query(Lawyer).get(lawyer_id)
+    if not item: raise HTTPException(status_code=404)
+    return item
