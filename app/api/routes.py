@@ -1,9 +1,16 @@
 
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from sqlalchemy.orm import Session
+from typing import List, Optional
+import os, uuid, urllib.request, urllib.error
+
+
 from fastapi import APIRouter, Depends, HTTPException, Header, status
 
 
 from sqlalchemy.orm import Session
 from typing import Optional
+
 from app.db.session import SessionLocal
 from app.core.config import JWT_SECRET
 from app.models.lawyer import Lawyer
@@ -17,6 +24,10 @@ from app.schemas.lawyer import LawyerCreate, LawyerOut, LawyerUpdate, LawyerList
 
 router = APIRouter()
 
+
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+SUPABASE_BUCKET = os.getenv("SUPABASE_BUCKET", "lawyers")
 
 def get_db():
     db = SessionLocal()
@@ -34,6 +45,23 @@ def require_admin(authorization: str = Header(None)):
 @router.get("/health")
 def health():
     return {"status": "ok"}
+
+
+def upload_to_supabase(file: UploadFile, path: str) -> str:
+    if not SUPABASE_URL or not SUPABASE_KEY:
+        raise RuntimeError("Supabase credentials not configured")
+    endpoint = f"{SUPABASE_URL}/storage/v1/object/{SUPABASE_BUCKET}/{path}"
+    file.file.seek(0)
+    data = file.file.read()
+    req = urllib.request.Request(endpoint, data=data, method="POST")
+    req.add_header("Authorization", f"Bearer {SUPABASE_KEY}")
+    req.add_header("Content-Type", file.content_type or "application/octet-stream")
+    try:
+        with urllib.request.urlopen(req) as resp:
+            resp.read()
+    except urllib.error.URLError as e:
+        raise RuntimeError(f"Upload failed: {e}")
+    return f"{SUPABASE_URL}/storage/v1/object/public/{SUPABASE_BUCKET}/{path}"
 
 
 @router.post("/lawyers", response_model=LawyerOut)
@@ -58,6 +86,7 @@ def create_lawyer(
         years_experience=payload.years_experience,
         bio=payload.bio,
         photo_url=payload.photo_url,
+        cv_url=payload.cv_url,
         rating=payload.rating,
         verification_status=payload.verification_status,
     )
@@ -112,12 +141,14 @@ def list_lawyers(
     items = query.offset(offset).limit(limit).all()
     return {"items": items, "total": total, "limit": limit, "offset": offset}
 
+
 @router.get("/lawyers/{lawyer_id}", response_model=LawyerOut)
 def get_lawyer(lawyer_id: int, db: Session = Depends(get_db)):
     obj = db.query(Lawyer).get(lawyer_id)
     if not obj:
         raise HTTPException(status_code=404, detail="Lawyer not found")
     return obj
+
 
 @router.put("/lawyers/{lawyer_id}", response_model=LawyerOut)
 
@@ -143,6 +174,32 @@ def update_lawyer(
         data["languages"] = ",".join(data["languages"])
     for campo, valor in data.items():
         setattr(obj, campo, valor)
+    db.commit(); db.refresh(obj)
+    return obj
+
+
+@router.post("/lawyers/{lawyer_id}/upload", response_model=LawyerOut)
+def upload_lawyer_file(
+    lawyer_id: int,
+    file: UploadFile = File(...),
+    file_type: str = "photo",
+    db: Session = Depends(get_db),
+):
+    obj = db.query(Lawyer).get(lawyer_id)
+    if not obj:
+        raise HTTPException(status_code=404, detail="Lawyer not found")
+    filename = f"{uuid.uuid4()}_{file.filename}"
+    path = f"{lawyer_id}/{filename}"
+    try:
+        url = upload_to_supabase(file, path)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    if file_type == "cv":
+        obj.cv_url = url
+    elif file_type == "photo":
+        obj.photo_url = url
+    else:
+        raise HTTPException(status_code=400, detail="Invalid file_type")
     db.commit(); db.refresh(obj)
     return obj
 

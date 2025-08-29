@@ -25,12 +25,22 @@ class LawyerShared(BaseModel):
     firm: Optional[constr(strip_whitespace=True)] = None
     specialties: Optional[List[str]] = None
     languages: Optional[List[str]] = None
+
+    country: Optional[str] = "Ecuador"
+    state: Optional[str] = None
+    city: Optional[str] = None
+    years_experience: Optional[int] = 0
+    bio: Optional[str] = None
+    photo_url: Optional[str] = None
+    cv_url: Optional[str] = None
+
     country: Optional[constr(strip_whitespace=True)] = "Ecuador"
     state: Optional[constr(strip_whitespace=True)] = None
     city: Optional[constr(strip_whitespace=True)] = None
     years_experience: Optional[YearsExperience] = 0
     bio: Optional[constr(strip_whitespace=True)] = None
     photo_url: Optional[constr(strip_whitespace=True)] = None
+
     rating: Optional[float] = None
     verification_status: VerificationStatus = VerificationStatus.pending
 
@@ -86,6 +96,7 @@ class LawyerUpdate(BaseModel):
     years_experience: Optional[int] = None
     bio: Optional[str] = None
     photo_url: Optional[str] = None
+    cv_url: Optional[str] = None
     rating: Optional[float] = None
     verification_status: Optional[VerificationStatus] = None
 

@@ -33,6 +33,7 @@ class Lawyer(Base):
     years_experience = Column(Integer, default=0)
     bio = Column(Text)
     photo_url = Column(String(300))
+    cv_url = Column(String(300))
     rating = Column(Float)
 
     is_active = Column(Boolean, default=True, nullable=False)
