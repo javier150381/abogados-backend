@@ -17,8 +17,24 @@ class LawyerBase(BaseModel):
     photo_url: Optional[str] = None
     rating: Optional[float] = None
 
-class LawyerCreate(LawyerBase): 
+class LawyerCreate(LawyerBase):
     pass
+
+class LawyerUpdate(BaseModel):
+    full_name: Optional[str] = None
+    email: Optional[EmailStr] = None
+    phone: Optional[str] = None
+    bar_number: Optional[str] = None
+    firm: Optional[str] = None
+    specialties: Optional[List[str]] = None
+    languages: Optional[List[str]] = None
+    country: Optional[str] = None
+    state: Optional[str] = None
+    city: Optional[str] = None
+    years_experience: Optional[int] = None
+    bio: Optional[str] = None
+    photo_url: Optional[str] = None
+    rating: Optional[float] = None
 
 class LawyerOut(LawyerBase):
     id: int
