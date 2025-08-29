@@ -1,9 +1,10 @@
-﻿from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from app.db.session import SessionLocal
 from app.models.lawyer import Lawyer
 from app.schemas.lawyer import LawyerCreate, LawyerOut, LawyerUpdate
+from app.api.deps import get_current_user
 
 router = APIRouter()
 
@@ -19,7 +20,13 @@ def health():
     return {"status": "ok"}
 
 @router.post("/lawyers", response_model=LawyerOut)
-def create_lawyer(payload: LawyerCreate, db: Session = Depends(get_db)):
+def create_lawyer(
+    payload: LawyerCreate,
+    db: Session = Depends(get_db),
+    user: dict = Depends(get_current_user),
+):
+    if user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Not authorized")
     item = Lawyer(
         full_name=payload.full_name,
         email=payload.email,
@@ -62,9 +69,15 @@ def list_lawyers(
         query = query.filter((Lawyer.full_name.ilike(like)) | (Lawyer.firm.ilike(like)) | (Lawyer.bio.ilike(like)))
     return query.offset(offset).limit(limit).all()
 
-
 @router.put("/lawyers/{lawyer_id}", response_model=LawyerOut)
-def update_lawyer(lawyer_id: int, payload: LawyerUpdate, db: Session = Depends(get_db)):
+def update_lawyer(
+    lawyer_id: int,
+    payload: LawyerUpdate,
+    db: Session = Depends(get_db),
+    user: dict = Depends(get_current_user),
+):
+    if user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Not authorized")
     obj = db.query(Lawyer).get(lawyer_id)
     if not obj:
         raise HTTPException(status_code=404, detail="Lawyer not found")
@@ -77,4 +90,3 @@ def update_lawyer(lawyer_id: int, payload: LawyerUpdate, db: Session = Depends(g
         setattr(obj, campo, valor)
     db.commit(); db.refresh(obj)
     return obj
-
