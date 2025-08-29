@@ -45,6 +45,7 @@ def list_lawyers(
     specialty: Optional[str] = None,
     city: Optional[str] = None,
     state: Optional[str] = None,
+    firm: Optional[str] = None,
     minExp: int = 0,
     q: Optional[str] = None,
     limit: int = 20,
@@ -54,6 +55,7 @@ def list_lawyers(
     if specialty: query = query.filter(Lawyer.specialties.ilike(f"%{specialty}%"))
     if city:      query = query.filter(Lawyer.city.ilike(f"%{city}%"))
     if state:     query = query.filter(Lawyer.state.ilike(f"%{state}%"))
+    if firm:      query = query.filter(Lawyer.firm.ilike(f"%{firm}%"))
     if minExp:    query = query.filter(Lawyer.years_experience >= minExp)
     if q:
         like = f"%{q}%"
