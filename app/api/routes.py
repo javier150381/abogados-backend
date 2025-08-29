@@ -1,9 +1,9 @@
 ﻿from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from typing import List, Optional
+from typing import Optional
 from app.db.session import SessionLocal
 from app.models.lawyer import Lawyer
-from app.schemas.lawyer import LawyerCreate, LawyerOut, LawyerUpdate
+from app.schemas.lawyer import LawyerCreate, LawyerOut, LawyerUpdate, LawyerList
 
 router = APIRouter()
 
@@ -39,7 +39,7 @@ def create_lawyer(payload: LawyerCreate, db: Session = Depends(get_db)):
     db.add(item); db.commit(); db.refresh(item)
     return item
 
-@router.get("/lawyers", response_model=List[LawyerOut])
+@router.get("/lawyers", response_model=LawyerList)
 def list_lawyers(
     db: Session = Depends(get_db),
     specialty: Optional[str] = None,
@@ -52,15 +52,26 @@ def list_lawyers(
     offset: int = 0,
 ):
     query = db.query(Lawyer)
-    if specialty: query = query.filter(Lawyer.specialties.ilike(f"%{specialty}%"))
-    if city:      query = query.filter(Lawyer.city.ilike(f"%{city}%"))
-    if state:     query = query.filter(Lawyer.state.ilike(f"%{state}%"))
-    if firm:      query = query.filter(Lawyer.firm.ilike(f"%{firm}%"))
-    if minExp:    query = query.filter(Lawyer.years_experience >= minExp)
+    if specialty:
+        query = query.filter(Lawyer.specialties.ilike(f"%{specialty}%"))
+    if city:
+        query = query.filter(Lawyer.city.ilike(f"%{city}%"))
+    if state:
+        query = query.filter(Lawyer.state.ilike(f"%{state}%"))
+    if firm:
+        query = query.filter(Lawyer.firm.ilike(f"%{firm}%"))
+    if minExp:
+        query = query.filter(Lawyer.years_experience >= minExp)
     if q:
         like = f"%{q}%"
-        query = query.filter((Lawyer.full_name.ilike(like)) | (Lawyer.firm.ilike(like)) | (Lawyer.bio.ilike(like)))
-    return query.offset(offset).limit(limit).all()
+        query = query.filter(
+            (Lawyer.full_name.ilike(like))
+            | (Lawyer.firm.ilike(like))
+            | (Lawyer.bio.ilike(like))
+        )
+    total = query.count()
+    items = query.offset(offset).limit(limit).all()
+    return {"items": items, "total": total, "limit": limit, "offset": offset}
 
 
 @router.put("/lawyers/{lawyer_id}", response_model=LawyerOut)

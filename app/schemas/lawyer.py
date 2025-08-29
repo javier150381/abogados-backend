@@ -40,3 +40,10 @@ class LawyerOut(LawyerBase):
     id: int
     class Config:
         from_attributes = True
+
+
+class LawyerList(BaseModel):
+    items: List[LawyerOut]
+    total: int
+    limit: int
+    offset: int
