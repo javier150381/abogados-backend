@@ -51,7 +51,7 @@ def list_lawyers(
     limit: int = 20,
     offset: int = 0,
 ):
-    query = db.query(Lawyer)
+    query = db.query(Lawyer).filter(Lawyer.is_active == True)
     if specialty: query = query.filter(Lawyer.specialties.ilike(f"%{specialty}%"))
     if city:      query = query.filter(Lawyer.city.ilike(f"%{city}%"))
     if state:     query = query.filter(Lawyer.state.ilike(f"%{state}%"))
@@ -65,7 +65,7 @@ def list_lawyers(
 
 @router.put("/lawyers/{lawyer_id}", response_model=LawyerOut)
 def update_lawyer(lawyer_id: int, payload: LawyerUpdate, db: Session = Depends(get_db)):
-    obj = db.query(Lawyer).get(lawyer_id)
+    obj = db.query(Lawyer).filter(Lawyer.id == lawyer_id, Lawyer.is_active == True).first()
     if not obj:
         raise HTTPException(status_code=404, detail="Lawyer not found")
     data = payload.dict(exclude_unset=True)
@@ -75,6 +75,16 @@ def update_lawyer(lawyer_id: int, payload: LawyerUpdate, db: Session = Depends(g
         data["languages"] = ",".join(data["languages"])
     for campo, valor in data.items():
         setattr(obj, campo, valor)
+    db.commit(); db.refresh(obj)
+    return obj
+
+
+@router.delete("/lawyers/{lawyer_id}", response_model=LawyerOut)
+def delete_lawyer(lawyer_id: int, db: Session = Depends(get_db)):
+    obj = db.query(Lawyer).filter(Lawyer.id == lawyer_id, Lawyer.is_active == True).first()
+    if not obj:
+        raise HTTPException(status_code=404, detail="Lawyer not found")
+    obj.is_active = False
     db.commit(); db.refresh(obj)
     return obj
 

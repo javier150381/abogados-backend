@@ -1,8 +1,10 @@
-﻿from sqlalchemy import Column, Integer, String, Text, Float
+from sqlalchemy import Column, Integer, String, Text, Float, Boolean
 from app.db.session import Base
+
 
 class Lawyer(Base):
     __tablename__ = "lawyers"
+
     id = Column(Integer, primary_key=True, index=True)
     full_name = Column(String(120), nullable=False, index=True)
     email = Column(String(120), index=True)
@@ -18,3 +20,5 @@ class Lawyer(Base):
     bio = Column(Text)
     photo_url = Column(String(300))
     rating = Column(Float)
+    is_active = Column(Boolean, default=True, nullable=False)
+
