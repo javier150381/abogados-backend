@@ -1,0 +1,13 @@
+﻿# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+
+# Local DB & secrets
+abogados.db
+.env
+
+# OS
+.DS_Store
