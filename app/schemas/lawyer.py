@@ -1,5 +1,11 @@
 from typing import List, Optional
 
+from pydantic import BaseModel, EmailStr
+from app.models.lawyer import VerificationStatus
+
+
+
+
 from pydantic import BaseModel, conint, constr, validator
 
 
@@ -26,6 +32,8 @@ class LawyerShared(BaseModel):
     bio: Optional[constr(strip_whitespace=True)] = None
     photo_url: Optional[constr(strip_whitespace=True)] = None
     rating: Optional[float] = None
+    verification_status: VerificationStatus = VerificationStatus.pending
+
 
     @validator("specialties", "languages", pre=True)
     def normalize_lists(cls, v):  # type: ignore[override]
@@ -63,8 +71,31 @@ class LawyerCreate(LawyerBase):
     pass
 
 
+
+class LawyerUpdate(BaseModel):
+    full_name: Optional[str] = None
+    email: Optional[EmailStr] = None
+    phone: Optional[str] = None
+    bar_number: Optional[str] = None
+    firm: Optional[str] = None
+    specialties: Optional[List[str]] = None
+    languages: Optional[List[str]] = None
+    country: Optional[str] = None
+    state: Optional[str] = None
+    city: Optional[str] = None
+    years_experience: Optional[int] = None
+    bio: Optional[str] = None
+    photo_url: Optional[str] = None
+    rating: Optional[float] = None
+    verification_status: Optional[VerificationStatus] = None
+
+
+class LawyerVerify(BaseModel):
+    verification_status: VerificationStatus
+
 class LawyerUpdate(LawyerShared):
     pass
+
 
 
 class LawyerOut(LawyerBase):
