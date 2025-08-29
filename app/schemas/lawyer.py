@@ -15,6 +15,7 @@ class LawyerBase(BaseModel):
     years_experience: Optional[int] = 0
     bio: Optional[str] = None
     photo_url: Optional[str] = None
+    cv_url: Optional[str] = None
     rating: Optional[float] = None
 
 class LawyerCreate(LawyerBase):
@@ -34,6 +35,7 @@ class LawyerUpdate(BaseModel):
     years_experience: Optional[int] = None
     bio: Optional[str] = None
     photo_url: Optional[str] = None
+    cv_url: Optional[str] = None
     rating: Optional[float] = None
 
 class LawyerOut(LawyerBase):
